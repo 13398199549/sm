@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+	<!-- 第一步：引入外部的数据库配置文件 -->
+	<context:property-placeholder location="classpath:mysql.properties" />
+
+	<!-- 第二步：开启spring容器的自动扫描功能 -->
+	<context:component-scan base-package="com.framestudy.sm"></context:component-scan>
+
+	<!-- 第三步：配置数据源连接池 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
+		<!-- JDBC连接数据库，最基本的4个元素 -->
+		<property name="driverClassName" value="${jdbc.driverClassName}"></property>
+		<property name="url" value="${jdbc.url}"></property>
+		<property name="username" value="${jdbc.userName}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+
+		<!-- 配置DBCP数据源连接池的扩张元素 -->
+		<!-- 配置连接池，连接的初始化条数 -->
+		<property name="initialSize" value="15"></property>
+		<!-- 配置连接池中，连接的最大条数 -->
+		<property name="maxTotal" value="50"></property>
+		<!-- 配置连接池中，允许存在的最大空闲状态的连接 -->
+		<property name="maxIdle" value="35"></property>
+		<!-- 配置连接池中，允许存在的最小空闲状态的连接 -->
+		<property name="minIdle" value="0"></property>
+		<!-- 不允许连接拥有自动提交功能 -->
+		<property name="defaultAutoCommit" value="false"></property>
+		<!-- 配置连接非只读 -->
+		<property name="defaultReadOnly" value="false"></property>
+		<!-- 配置事务隔离级别为：4代表可重复读 8代表可串行化、2代表读已提交，1代表读未提交 -->
+		<property name="defaultTransactionIsolation" value="4"></property>
+		<!-- 设置连接处理SQL时，最大的超时时间，单位是：秒 -->
+		<property name="defaultQueryTimeout" value="10"></property>
+		<!-- 设置连接的验证SQL语句，用于校验连接是否可用 -->
+		<property name="validationQuery" value="select now() from dual"></property>
+		<!-- 设置连接校验时，最大的超时时间，单位是：秒 -->
+		<property name="validationQueryTimeout" value="10"></property>
+		<!-- 连接池中允许缓存预编译对象 -->
+		<property name="poolPreparedStatements" value="true"></property>
+		<!-- 连接池中允许存在的预编译对象的个数 -->
+		<property name="maxOpenPreparedStatements" value="200"></property>
+	</bean>
+
+	<!-- 第四步，配置SessionFactory -->
+	<bean id="sessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 配置数据源连接池 -->
+		<property name="dataSource" ref="dataSource"></property>
+		<!-- 自动扫描，完成给类取类别名 -->
+		<!-- 如果存在多个包，需要自动扫描，包和包之间，使用,或者;间隔 -->
+		<property name="typeAliasesPackage" value="com.framestudy.sm.bean"></property>
+
+	</bean>
+
+	<!-- 第五步，配置MapperScanner -->
+	<!-- 主要作用：扫描映射关系，将映射关系与SessionFactory进行绑定 -->
+	<bean id="mapperScanner" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- 自动扫描，完成*Mapper.xml,*Mapper.java的自动映射，映射：Java接口以及SQL之间的映射关系 -->
+		<!-- 如果存在多个包，需要自动扫描，包和包之间，使用,或者;间隔 -->
+		<property name="basePackage"
+			value="
+			com.framestudy.sm.userinfomag.mapper;
+			com.framestudy.sm.logmag.mapper;"></property>
+		<!-- 将上述的映射关系，告知给SessionFactory -->
+		<property name="sqlSessionFactoryBeanName" value="sessionFactory"></property>
+	</bean>
+
+	<!-- 第六步，配置事务管理器 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+
+	<!-- 第七步，配置spring管理事务的手段 -->
+	<!-- spring容器管理事务，有两种不同的方案：编程式事务方案，声明式事务方案 -->
+	<!-- <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="*" read-only="true"/>
+            <tx:method name="save*" read-only="false" rollback-for="java.lang.Exception" propagation="REQUIRED"/>
+            <tx:method name="insert*" read-only="false" rollback-for="java.lang.Exception" propagation="REQUIRED"/>
+            <tx:method name="update*" read-only="false" rollback-for="java.lang.Exception" propagation="REQUIRED"/>
+            <tx:method name="delete*" read-only="false" rollback-for="java.lang.Exception" propagation="REQUIRED"/>
+            <tx:method name="remove" read-only="false" rollback-for="java.lang.Exception" propagation="REQUIRED"/>
+            <tx:method name="get*" read-only="true" propagation="SUPPORTS"/>
+            <tx:method name="list*" read-only="true" propagation="SUPPORTS"/>
+        </tx:attributes>
+    </tx:advice>
+	
+	<aop:config>
+        <aop:pointcut id="txPointcut" expression="execution(* com.framestudy.sm.*mag.service.impl.*ServiceImpl.*(..))"/>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut"/>
+    </aop:config> -->
+
+
+	<!-- spring容器声明式事务管理方案中，除了上述的AOP管理事务方案以外，还
+	提供了一种使用注解来管理事务的另一种方案 -->
+	<!-- 开启事务的注解驱动支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+
+	<!-- 第八步，开启切面的动态代理支持 -->
+	<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+</beans>
